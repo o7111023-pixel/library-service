@@ -7,6 +7,7 @@ from rest_framework.test import APITestCase
 
 from books.models import Book
 from borrowings.models import Borrowing
+from borrowings.tasks import check_overdue_borrowings
 
 User = get_user_model()
 
@@ -216,3 +217,35 @@ class BorrowingListDetailTests(APITestCase):
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
         )
+
+
+class OverdueBorrowingTaskTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="overdueuser",
+            email="overdue@example.com",
+            password="TestPassword123!",
+        )
+
+        self.book = Book.objects.create(
+            title="Overdue Book",
+            author="Test Author",
+            cover="HARD",
+            inventory=5,
+            daily_fee="2.50",
+        )
+
+    @patch("borrowings.tasks.send_telegram_message")
+    def test_check_overdue_borrowings(self, mock_send_telegram_message):
+        Borrowing.objects.create(
+            borrow_date=date(2026, 9, 1),
+            expected_return_date=date(2026, 9, 20),
+            actual_return_date=None,
+            book=self.book,
+            user=self.user,
+        )
+
+        result = check_overdue_borrowings()
+
+        self.assertEqual(result, 1)
+        mock_send_telegram_message.assert_called_once()
