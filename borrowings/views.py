@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from notifications.telegram import send_telegram_message
 
 from books.models import Book
 from borrowings.models import Borrowing
@@ -59,6 +60,13 @@ class BorrowingViewSet(viewsets.ModelViewSet):
         book.save(update_fields=["inventory"])
 
         serializer.save(user=self.request.user)
+
+        send_telegram_message(
+            f"📚 New borrowing created!\n"
+            f"User: {self.request.user.email}\n"
+            f"Book: {book.title}\n"
+            f"Expected return: {serializer.validated_data['expected_return_date']}"
+        )
 
     @action(
         detail=True,

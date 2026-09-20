@@ -1,4 +1,5 @@
 from datetime import date
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from rest_framework import status
@@ -51,7 +52,8 @@ class BorrowingListDetailTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], self.borrowing.id)
 
-    def test_create_borrowing(self):
+    @patch("borrowings.views.send_telegram_message")
+    def test_create_borrowing(self, mock_send_telegram_message):
         self.client.force_authenticate(user=self.user)
 
         response = self.client.post(
@@ -73,6 +75,8 @@ class BorrowingListDetailTests(APITestCase):
             Borrowing.objects.filter(user=self.user).count(),
             2,
         )
+
+        mock_send_telegram_message.assert_called_once()
 
     def test_create_borrowing_when_inventory_is_zero(self):
         self.client.force_authenticate(user=self.user)
