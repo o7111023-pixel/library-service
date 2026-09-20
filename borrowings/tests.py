@@ -172,3 +172,43 @@ class BorrowingListDetailTests(APITestCase):
             response.data[0]["user"],
             another_user.id,
         )
+
+    def test_return_borrowing(self):
+        self.client.force_authenticate(user=self.user)
+
+        self.book.inventory = 4
+        self.book.save()
+
+        response = self.client.post(
+            f"/api/borrowings/{self.borrowing.id}/return/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.borrowing.refresh_from_db()
+        self.book.refresh_from_db()
+
+        self.assertIsNotNone(self.borrowing.actual_return_date)
+        self.assertEqual(self.book.inventory, 5)
+
+    def test_cannot_return_borrowing_twice(self):
+        self.client.force_authenticate(user=self.user)
+
+        self.client.post(
+            f"/api/borrowings/{self.borrowing.id}/return/",
+            {},
+            format="json",
+        )
+
+        response = self.client.post(
+            f"/api/borrowings/{self.borrowing.id}/return/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
