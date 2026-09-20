@@ -94,3 +94,81 @@ class BorrowingListDetailTests(APITestCase):
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
         )
+
+    def test_regular_user_sees_only_own_borrowings(self):
+        another_user = User.objects.create_user(
+            username="anotheruser",
+            email="another@example.com",
+            password="TestPassword123!",
+        )
+
+        Borrowing.objects.create(
+            borrow_date=date(2026, 9, 20),
+            expected_return_date=date(2026, 9, 27),
+            book=self.book,
+            user=another_user,
+        )
+
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get("/api/borrowings/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["user"], self.user.id)
+
+    def test_filter_active_borrowings(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get(
+            "/api/borrowings/?is_active=true"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    def test_filter_inactive_borrowings(self):
+        self.borrowing.actual_return_date = date(2026, 9, 25)
+        self.borrowing.save()
+
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get(
+            "/api/borrowings/?is_active=false"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    def test_admin_can_filter_by_user_id(self):
+        admin = User.objects.create_superuser(
+            username="admin",
+            email="admin@example.com",
+            password="AdminPassword123!",
+        )
+
+        another_user = User.objects.create_user(
+            username="anotheruser",
+            email="another@example.com",
+            password="TestPassword123!",
+        )
+
+        Borrowing.objects.create(
+            borrow_date=date(2026, 9, 20),
+            expected_return_date=date(2026, 9, 27),
+            book=self.book,
+            user=another_user,
+        )
+
+        self.client.force_authenticate(user=admin)
+
+        response = self.client.get(
+            f"/api/borrowings/?user_id={another_user.id}"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data[0]["user"],
+            another_user.id,
+        )
