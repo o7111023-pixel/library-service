@@ -28,3 +28,6 @@ def create_stripe_session(payment):
     payment.save(update_fields=["session_url", "session_id"])
 
     return session
+
+def create_payment_session(payment):
+    return create_stripe_session(payment)
