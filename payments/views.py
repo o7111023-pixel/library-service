@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from payments.models import Payment
 from payments.serializers import PaymentSerializer
 from payments.stripe import create_stripe_session
+from rest_framework.views import APIView
 
 
 class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
@@ -25,4 +26,20 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
                 "session_url": session.url,
             },
             status=status.HTTP_201_CREATED,
+        )
+
+
+class PaymentSuccessView(APIView):
+    def get(self, request):
+        return Response(
+            {"message": "Payment successful."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class PaymentCancelView(APIView):
+    def get(self, request):
+        return Response(
+            {"message": "Payment cancelled."},
+            status=status.HTTP_200_OK,
         )
