@@ -79,11 +79,14 @@ class BorrowingListDetailTests(APITestCase):
 
         mock_send_telegram_message.assert_called_once()
 
-    def test_create_borrowing_when_inventory_is_zero(self):
+    @patch("borrowings.views.create_payment_session")
+    @patch("borrowings.views.send_telegram_message")
+    def test_create_borrowing(
+            self,
+            mock_send_telegram_message,
+            mock_create_payment_session,
+    ):
         self.client.force_authenticate(user=self.user)
-
-        self.book.inventory = 0
-        self.book.save()
 
         response = self.client.post(
             "/api/borrowings/",
@@ -97,8 +100,19 @@ class BorrowingListDetailTests(APITestCase):
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_400_BAD_REQUEST,
+            status.HTTP_201_CREATED,
         )
+
+        self.book.refresh_from_db()
+        self.assertEqual(self.book.inventory, 4)
+
+        self.assertEqual(
+            Borrowing.objects.filter(user=self.user).count(),
+            2,
+        )
+
+        mock_create_payment_session.assert_called_once()
+        mock_send_telegram_message.assert_called_once()
 
     def test_regular_user_sees_only_own_borrowings(self):
         another_user = User.objects.create_user(
