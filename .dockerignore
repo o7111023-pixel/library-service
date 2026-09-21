@@ -1,0 +1,16 @@
+.git
+.gitignore
+.idea
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+db.sqlite3
+media
+staticfiles
+.pytest_cache
+.coverage
+htmlcov
