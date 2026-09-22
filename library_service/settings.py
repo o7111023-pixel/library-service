@@ -27,6 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-8+#_seth8(wvnlcq%xj$ij_--&pb0%ti=7o7ayg615qhgef+@v'
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_SUCCESS_URL = os.environ["STRIPE_SUCCESS_URL"]
+STRIPE_CANCEL_URL = os.environ["STRIPE_CANCEL_URL"]
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

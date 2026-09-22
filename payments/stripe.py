@@ -19,8 +19,8 @@ def create_stripe_session(payment):
                 "quantity": 1,
             }
         ],
-        success_url="http://127.0.0.1:8000/api/payments/success/",
-        cancel_url="http://127.0.0.1:8000/api/payments/cancel/",
+        success_url=settings.STRIPE_SUCCESS_URL,
+        cancel_url=settings.STRIPE_CANCEL_URL,
     )
 
     payment.session_url = session.url
