@@ -25,19 +25,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-8+#_seth8(wvnlcq%xj$ij_--&pb0%ti=7o7ayg615qhgef+@v'
+SECRET_KEY = os.environ["SECRET_KEY"]
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_SUCCESS_URL = os.environ["STRIPE_SUCCESS_URL"]
 STRIPE_CANCEL_URL = os.environ["STRIPE_CANCEL_URL"]
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+FINE_MULTIPLIER = int(os.getenv("FINE_MULTIPLIER", "2"))
 
 ALLOWED_HOSTS = []
-
-
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -47,11 +45,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "rest_framework",
+    "drf_spectacular",
     "books",
     "users",
     "borrowings",
     "payments",
 ]
+
+# Application definition
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -142,6 +144,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"
@@ -152,4 +155,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "borrowings.tasks.check_overdue_borrowings",
         "schedule": 86400.0,
     },
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Library Service API",
+    "DESCRIPTION": "Library Service API documentation",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }

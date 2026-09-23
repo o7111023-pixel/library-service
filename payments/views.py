@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.conf import settings
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -61,7 +62,11 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
             today - borrowing.expected_return_date
         ).days
 
-        money_to_pay = borrowing.book.daily_fee * overdue_days
+        money_to_pay = (
+                borrowing.book.daily_fee
+                * overdue_days
+                * settings.FINE_MULTIPLIER
+        )
 
         payment = Payment.objects.create(
             status=Payment.Status.PENDING,

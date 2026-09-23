@@ -1,4 +1,7 @@
+from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
+
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -27,6 +30,7 @@ class BorrowingViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(user=self.request.user)
         else:
             user_id = self.request.query_params.get("user_id")
+
             if user_id:
                 queryset = queryset.filter(user_id=user_id)
 
@@ -104,19 +108,33 @@ class BorrowingViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        borrowing.actual_return_date = request.data.get(
-            "actual_return_date"
-        )
-
-        if borrowing.actual_return_date is None:
-            from django.utils import timezone
-
-            borrowing.actual_return_date = timezone.now().date()
-
+        actual_return_date = timezone.now().date()
+        borrowing.actual_return_date = actual_return_date
         borrowing.save(update_fields=["actual_return_date"])
 
         borrowing.book.inventory += 1
         borrowing.book.save(update_fields=["inventory"])
+
+        if actual_return_date > borrowing.expected_return_date:
+            overdue_days = (
+                actual_return_date
+                - borrowing.expected_return_date
+            ).days
+
+            money_to_pay = (
+                borrowing.book.daily_fee
+                * overdue_days
+                * settings.FINE_MULTIPLIER
+            )
+
+            payment = Payment.objects.create(
+                status=Payment.Status.PENDING,
+                type=Payment.Type.FINE,
+                borrowing=borrowing,
+                money_to_pay=money_to_pay,
+            )
+
+            create_payment_session(payment)
 
         return Response(
             BorrowingSerializer(borrowing).data,

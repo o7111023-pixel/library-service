@@ -54,7 +54,7 @@ class BorrowingListDetailTests(APITestCase):
         self.assertEqual(response.data["id"], self.borrowing.id)
 
     @patch("borrowings.views.send_telegram_message")
-    def test_create_borrowing(self, mock_send_telegram_message):
+    def test_create_borrowing_as_staff(self, mock_send_telegram_message):
         self.client.force_authenticate(user=self.user)
 
         response = self.client.post(

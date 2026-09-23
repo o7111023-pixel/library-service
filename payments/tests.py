@@ -1,5 +1,5 @@
 from decimal import Decimal
-from datetime import date
+from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
 from rest_framework import status
@@ -121,9 +121,11 @@ class FinePaymentTests(APITestCase):
             daily_fee="2.50",
         )
 
+        today = date.today()
+
         self.borrowing = Borrowing.objects.create(
-            borrow_date=date(2026, 9, 1),
-            expected_return_date=date(2026, 9, 20),
+            borrow_date=today - timedelta(days=2),
+            expected_return_date=today - timedelta(days=1),
             actual_return_date=None,
             book=self.book,
             user=self.user,
@@ -163,7 +165,7 @@ class FinePaymentTests(APITestCase):
 
         self.assertEqual(
             response.data["money_to_pay"],
-            Decimal("2.50"),
+            Decimal("5.00"),
         )
 
         payment = Payment.objects.get(
@@ -178,7 +180,7 @@ class FinePaymentTests(APITestCase):
 
         self.assertEqual(
             payment.money_to_pay,
-            Decimal("2.50"),
+            Decimal("5.00"),
         )
 
         mock_create_payment_session.assert_called_once()
