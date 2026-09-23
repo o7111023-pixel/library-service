@@ -53,8 +53,13 @@ class BorrowingListDetailTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], self.borrowing.id)
 
+    @patch("borrowings.views.create_payment_session")
     @patch("borrowings.views.send_telegram_message")
-    def test_create_borrowing_as_staff(self, mock_send_telegram_message):
+    def test_create_borrowing_as_user(
+            self,
+            mock_send_telegram_message,
+            mock_create_payment_session,
+    ):
         self.client.force_authenticate(user=self.user)
 
         response = self.client.post(
